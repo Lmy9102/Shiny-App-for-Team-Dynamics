@@ -1,4 +1,5 @@
 library(shiny)
+library(plotly)
 
 # Define UI for application
 ui <- fluidPage(

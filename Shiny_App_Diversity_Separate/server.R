@@ -3,7 +3,7 @@ library(ggplot2)
 library(plotly)
 
 # Set up the server logic to process input and generate the plot.
-server1 <- function(input, output) {
+server <- function(input, output) {
   
   # Reactive data frame to store the history of team composition
   history <- reactiveVal(data.frame(Diversity = numeric(), Performance = numeric(), Composition = character()))

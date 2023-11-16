@@ -1,7 +1,9 @@
 library(shiny)
+library(ggplot2)
+library(plotly)
 
 # Create a user interface with inputs for team member expertise and an output area for the plot.
-ui1 <- fluidPage(
+ui <- fluidPage(
   titlePanel("Functional Expertise Diversity and Team Performance"),
   sidebarLayout(
     sidebarPanel(
