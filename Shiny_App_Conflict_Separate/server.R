@@ -1,3 +1,6 @@
+
+
+
 library(shiny)
 library(ggplot2)
 library(plotly)
@@ -14,9 +17,9 @@ server <- function(input, output, session) {
     configNum <- nrow(conflictHistory()) + 1
     configLabel <- paste("Configuration", configNum)
     
-    earlyConflict <- paste(input$task_early, input$rel_early, sep = ", ")
-    middleConflict <- paste(input$task_middle, input$rel_middle, sep = ", ")
-    lateConflict <- paste(input$task_late, input$rel_late, sep = ", ")
+    earlyConflict <- paste(input$rel_early, input$proc_early, input$task_early, sep = ", ")
+    middleConflict <- paste(input$rel_middle, input$proc_middle, input$task_middle, sep = ", ")
+    lateConflict <- paste(input$rel_late, input$proc_late, input$task_late, sep = ", ")
     
     newConflictEntry <- data.frame(
       Configuration = configLabel,
@@ -28,14 +31,14 @@ server <- function(input, output, session) {
     # Performance logic
     performance <- "medium"  # Default performance level
     performanceScore <- sample(50:75, 1)  # Random fluctuation within medium range
-    if (earlyConflict == "Low, Low" && middleConflict == "High, Low" && lateConflict == "Low, Low") {
+    if (earlyConflict == "Low, Low, Moderate" && middleConflict == "Moderate, Moderate, High" && lateConflict == "High, High, High") {
       performance <- "high"
       performanceScore <- 100
       newConflictEntry$Configuration <- paste(configLabel, "(High)")
       currentConfigs <- specialConfigs()
       currentConfigs$high <- paste(configLabel, "(High) The conflict configuration observed in high-performing teams.")
       specialConfigs(currentConfigs)
-    } else if (earlyConflict == "Medium, Medium" && middleConflict == "Low, High" && lateConflict == "Low, High") {
+    } else if (earlyConflict == "Low, Moderate, Moderate" && middleConflict == "High, Low, Moderate" && lateConflict == "High, Moderate, High") {
       performance <- "low"
       performanceScore <- 20
       newConflictEntry$Configuration <- paste(configLabel, "(Low)")
@@ -63,7 +66,7 @@ server <- function(input, output, session) {
   # Note below the conflict table
   output$conflictNote <- renderUI({
     if (nrow(conflictHistory()) > 0) {
-      tags$p("The configuration of team conflict level follows the sequence of task-relationship conflict.")
+      tags$p("The configuration of team conflict level follows the sequence of relationship, process, task conflict.")
     }
   })
   
@@ -95,7 +98,7 @@ server <- function(input, output, session) {
     p <- ggplot(data, aes(x = Config, y = PerformanceScore)) +
       geom_point() +
       geom_line(aes(group = Config), linetype = "dotted") +
-      scale_y_continuous(breaks = c(20, 50, 100), labels = c("Low", "Medium", "High")) +
+      scale_y_continuous(breaks = c(20, 50, 100), labels = c("Low", "Moderate", "High")) +
       labs(title = "Team Performance vs. Configuration",
            x = "Configuration", y = "Performance Level") +
       theme_minimal() +
