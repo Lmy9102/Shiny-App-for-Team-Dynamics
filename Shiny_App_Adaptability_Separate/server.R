@@ -7,48 +7,55 @@ server <- function(input, output) {
   
   observeEvent(input$simulate, {
     # A scoring function to evaluate adaptability time required for transition
-    calculateTime <- function(start, end) {
+    calculateTime <- function(decision_start, decision_end, reward_start, reward_end) {
       # Calculate distance between configurations
-      distance <- sum(abs(start - end))
+      decisionDistance <- abs(decision_start - decision_end)
+      rewardDistance <- abs(reward_start - reward_end)
       
       # Base time based on distance
-      baseTime <- distance * 2
+      baseTime <- (decisionDistance + rewardDistance) * 2
       
-      # Check if transitioning from beyond 0.5 to below 0.5
-      if (all(start > 0.5) && all(end < 0.5)) {
-        return(baseTime * 0.5) # Faster transition
+      # Initialize multipliers
+      decisionMultiplier <- 1
+      rewardMultiplier <- 1
+      compoundingMultiplier <- 1
+      
+      # Decision transition multipliers
+      if (decision_start > 0.5 && decision_end <= 0.5) {
+        decisionMultiplier <- 1 # More time for centralized to decentralized
+      } else if (decision_start <= 0.5 && decision_end > 0.5) {
+        decisionMultiplier <- 1.5 # Less time for decentralized to centralized
       }
       
-      # Check if transitioning from below 0.5 to beyond 0.5
-      if (all(start < 0.5) && all(end > 0.5)) {
-        return(baseTime * 1.5) # Slower transition
+      # Reward transition multipliers
+      if (reward_start > 0.5 && reward_end <= 0.5) {
+        rewardMultiplier <- 1 # More time for competition to cooperation
+      } else if (reward_start <= 0.5 && reward_end > 0.5) {
+        rewardMultiplier <- 1.5 # Less time for cooperation to competition
       }
       
-      # Check for the special cases
-      if (all(start == 0.5) && all(end == 0.5)) {
-        return(0) # No transition time needed
-      } else if (all(start == c(0, 0, 0)) && all(end == c(1, 1, 1))) {
-        return(10) # Max transition time
-      } else if (all(start == c(1, 1, 1)) && all(end == c(0, 0, 0))) {
-        return(9) # Second longest transition time
+      # Compounding effect if both decision and reward are changing as specified
+      if ((decision_start > 0.5 && decision_end <= 0.5) && (reward_start > 0.5 && reward_end <= 0.5)) {
+        compoundingMultiplier <- 1.1 # Compounding effect
       }
       
-      # General case based on distance
-      return(baseTime)
+      # Apply the multipliers to the base time
+      totalTime <- baseTime * decisionMultiplier * rewardMultiplier * compoundingMultiplier
+      return(totalTime)
     }
     
     # Calculate the total transition time
     totalTime <- calculateTime(
-      c(input$structure_start, input$decision_start, input$reward_start),
-      c(input$structure_end, input$decision_end, input$reward_end)
+      input$decision_start,
+      input$decision_end,
+      input$reward_start,
+      input$reward_end
     )
     
     # Format the configuration as text
-    startConfig <- paste0("Structure: ", round(input$structure_start, 2), 
-                          ", Decision: ", round(input$decision_start, 2), 
+    startConfig <- paste0("Decision: ", round(input$decision_start, 2), 
                           ", Reward: ", round(input$reward_start, 2))
-    endConfig <- paste0("Structure: ", round(input$structure_end, 2), 
-                        ", Decision: ", round(input$decision_end, 2), 
+    endConfig <- paste0("Decision: ", round(input$decision_end, 2), 
                         ", Reward: ", round(input$reward_end, 2))
     
     # Update history
@@ -70,7 +77,6 @@ server <- function(input, output) {
       return(ggplotly(ggplot() + theme_void()))
     }
     
-    # Generate a line plot to show the history of transition times
     p <- plot_ly(data, x = ~Transition, y = ~Time, type = 'scatter', mode = 'lines+markers',
                  text = ~paste("Start: ", Start, "<br>End: ", End), hoverinfo = 'text')
     
